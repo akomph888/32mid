@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบรายงานผลคะแนนสอบปลายภาค - วิชาการรู้ดิจิทัล ชั้นปีที่ 1 รุ่นที่ 32</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Fonts: Prompt -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+  <!-- Header Banner -->
+  <header class="bg-gradient-to-r from-blue-700 via-indigo-600 to-sky-600 text-white shadow-lg">
+    <div class="max-w-6xl mx-auto px-4 py-8">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+        <div>
+          <span class="inline-block bg-white/20 text-xs px-3 py-1 rounded-full uppercase tracking-wider font-semibold mb-2 backdrop-blur-sm">
+            คะแนนเต็ม 70 คะแนน
+          </span>
+          <h1 class="text-2xl md:text-3xl font-bold">ผลการสอบปลายภาค วิชาการรู้ดิจิทัล</h1>
+          <p class="text-blue-100 text-sm mt-1">นักศึกษาชั้นปีที่ 1 รุ่นที่ 32 • ระบบรายงานคะแนนแบบปกปิดชื่อ-สกุล</p>
+        </div>
+        <div class="text-right">
+          <div class="text-xs text-blue-200">วันที่จัดสอบ</div>
+          <div class="text-sm font-semibold text-white">4 พฤศจิกายน 2569</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+
+    <!-- KPI Summary Cards -->
+    <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <p class="text-xs text-slate-500 font-medium">ผู้เข้าสอบทั้งหมด</p>
+        <p class="text-2xl font-bold text-slate-800 mt-1" id="stat-total">109 <span class="text-xs font-normal text-slate-500">คน</span></p>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <p class="text-xs text-slate-500 font-medium">คะแนนเฉลี่ย (Mean)</p>
+        <p class="text-2xl font-bold text-indigo-600 mt-1" id="stat-avg">58.70 <span class="text-xs font-normal text-slate-500">/ 70</span></p>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <p class="text-xs text-slate-500 font-medium">คะแนนสูงสุด (Max)</p>
+        <p class="text-2xl font-bold text-emerald-600 mt-1" id="stat-max">67.00 <span class="text-xs font-normal text-slate-500">/ 70</span></p>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <p class="text-xs text-slate-500 font-medium">คะแนนต่ำสุด (Min)</p>
+        <p class="text-2xl font-bold text-amber-600 mt-1" id="stat-min">37.00 <span class="text-xs font-normal text-slate-500">/ 70</span></p>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 col-span-2 sm:col-span-1">
+        <p class="text-xs text-slate-500 font-medium">ผลการประเมิน (ผ่าน)</p>
+        <p class="text-2xl font-bold text-teal-600 mt-1" id="stat-pass">100% <span class="text-xs font-normal text-slate-500">(109 คน)</span></p>
+      </div>
+    </section>
+
+    <!-- Search Section -->
+    <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+      <div class="max-w-xl mx-auto text-center">
+        <label for="student-search" class="block text-base font-semibold text-slate-700 mb-2">
+          🔍 ค้นหาผลคะแนนสอบด้วยรหัสนักศึกษา
+        </label>
+        <p class="text-xs text-slate-500 mb-4">พิมพ์รหัสนักศึกษา (เช่น 69124301... หรือเลขท้าย 3 ตัว) เพื่อดูผลคะแนนของคุณ</p>
+        <div class="relative">
+          <input 
+            type="text" 
+            id="student-search" 
+            placeholder="กรอกรหัสนักศึกษา เช่น 69124301001" 
+            class="w-full px-5 py-3.5 pr-12 text-slate-800 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:bg-white transition text-center sm:text-left text-lg font-mono tracking-wide"
+          />
+          <button id="clear-search" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-2 text-sm font-bold">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <!-- Specific Result Banner (When exact 1 match) -->
+      <div id="single-result-card" class="hidden mt-6 max-w-lg mx-auto bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-200 rounded-2xl p-6 text-center">
+        <div class="inline-block bg-indigo-600 text-white font-mono text-xs px-3 py-1 rounded-full mb-2" id="res-id">
+          69124301001
+        </div>
+        <div class="text-slate-600 text-sm">คะแนนที่ได้</div>
+        <div class="text-4xl font-extrabold text-indigo-700 my-2">
+          <span id="res-score">0</span> <span class="text-lg font-normal text-slate-500">/ 70</span>
+        </div>
+        <div class="w-full bg-slate-200 rounded-full h-3 mb-3 overflow-hidden">
+          <div id="res-bar" class="bg-indigo-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+        <div class="grid grid-cols-3 gap-2 pt-2 border-t border-indigo-100 text-xs">
+          <div>
+            <span class="text-slate-500 block">คิดเป็นร้อยละ</span>
+            <span class="font-bold text-slate-800 text-sm" id="res-pct">0%</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block">คะแนน T</span>
+            <span class="font-bold text-slate-800 text-sm" id="res-tscore">0</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block">เกณฑ์ประเมิน</span>
+            <span class="font-bold text-emerald-600 text-sm" id="res-status">ผ่าน</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Score Distribution Chart -->
+    <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+      <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <span>📊</span> แผนภูมิการกระจายตัวของคะแนน (Score Distribution)
+      </h2>
+      <div class="h-64 sm:h-72">
+        <canvas id="scoreChart"></canvas>
+      </div>
+    </section>
+
+    <!-- Data Table Section -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <div>
+          <h2 class="text-base font-bold text-slate-800">ตารางแสดงรายการคะแนน (รหัสนักศึกษา)</h2>
+          <p class="text-xs text-slate-500">แสดงผล <span id="table-count" class="font-bold text-indigo-600">109</span> รายการ</p>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-100">
+              <th class="py-3 px-4 text-center">#</th>
+              <th class="py-3 px-4">รหัสนักศึกษา</th>
+              <th class="py-3 px-4 text-center">คะแนนรวม (70 ข้อ)</th>
+              <th class="py-3 px-4 text-center">ร้อยละ (%)</th>
+              <th class="py-3 px-4 text-center">คะแนน T</th>
+              <th class="py-3 px-4 text-center">เกณฑ์</th>
+            </tr>
+          </thead>
+          <tbody id="student-table-body" class="divide-y divide-slate-100">
+            <!-- Table rows populated via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="text-center py-6 text-xs text-slate-400">
+    วิชาการรู้ดิจิทัล • มหาวิทยาลัยราชภัฏ • พัฒนาสำหรับเผยแพร่ผ่าน GitHub Pages
+  </footer>
+
+  <!-- Embedded Anonymized Dataset -->
+  <script>
+    const rawData = [
+      {"id":"69124301001","score":51.0,"pct":72.86,"status":"ผ่าน","tScore":35.87},
+      {"id":"69124301002","score":64.0,"pct":91.43,"status":"ผ่าน","tScore":59.73},
+      {"id":"69124301003","score":56.0,"pct":80.0,"status":"ผ่าน","tScore":45.05},
+      {"id":"69124301004","score":59.0,"pct":84.29,"status":"ผ่าน","tScore":50.56},
+      {"id":"69124301005","score":58.0,"pct":82.86,"status":"ผ่าน","tScore":48.72},
+      {"id":"69124301006","score":60.0,"pct":85.71,"status":"ผ่าน","tScore":52.39},
+      {"id":"69124301007","score":62.0,"pct":88.57,"status":"ผ่าน","tScore":56.06},
+      {"id":"69124301008","score":55.0,"pct":78.57,"status":"ผ่าน","tScore":43.21},
+      {"id":"69124301009","score":58.0,"pct":82.86,"status":"ผ่าน","tScore":48.72},
+      {"id":"69124301010","score":59.0,"pct":84.29,"status":"ผ่าน","tScore":50.56},
+      {"id":"69124301011","score":61.0,"pct":87.14,"status":"ผ่าน","tScore":54.23},
+      {"id":"69124301012","score":61.0,"pct":87.14,"status":"ผ่าน","tScore":54.23},
+      {"id":"69124301013","score":65.0,"pct":92.86,"status":"ผ่าน","tScore":61.57},
+      {"id":"69124301014","score":63.0,"pct":90.0,"status":"ผ่าน","tScore":57.9},
+      {"id":"69124301015","score":62.0,"pct":88.57,"status":"ผ่าน","tScore":56.06},
+      {"id":"69124301016","score":55.0,"pct":78.57,"status":"ผ่าน","tScore":43.21},
+      {"id":"69124301017","score":57.0,"pct":81.43,"status":"ผ่าน","tScore":46.88},
+      {"id":"69124301018","score":60.0,"pct":85.71,"status":"ผ่าน","tScore":52.39},
+      {"id":"69124301019","score":57.0,"pct":81.43,"status":"ผ่าน","tScore":46.88},
+      {"id":"69124301020","score":59.0,"pct":84.29,"status":"ผ่าน","tScore":50.56},
+      {"id":"69124301021","score":62.0,"pct":88.57,"status":"ผ่าน","tScore":56.06},
+      {"id":"69124301022","score":60.0,"pct":85.71,"status":"ผ่าน","tScore":52.39},
+      {"id":"69124301023","score":51.0,"pct":72.86,"status":"ผ่าน","tScore":35.87},
+      {"id":"69124301024","score":62.0,"pct":88.57,"status":"ผ่าน","tScore":56.06},
+      {"id":"69124301025","score":58.0,"pct":82.86,"status":"ผ่าน","tScore":48.72},
+      {"id":"69124301026","score":54.0,"pct":77.14,"status":"ผ่าน","tScore":41.38},
+      {"id":"69124301027","score":62.0,"pct":88.57,"status":"ผ่าน","tScore":56.06},
+      {"id":"69124301028","score":61.0,"pct":87.14,"status":"ผ่าน","tScore":54.23},
+      {"id":"69124301029","score":64.0,"pct":91.43,"status":"ผ่าน","tScore":59.73},
+      {"id":"69124301030","score":62.0,"pct":88.57,"status":"ผ่าน","tScore":56.06},
+      {"id":"69124301031","score":57.0,"pct":81.43,"status":"ผ่าน","tScore":46.88},
+      {"id":"69124301032","score":52.0,"pct":74.29,"status":"ผ่าน","tScore":37.71},
+      {"id":"69124301033","score":62.0,"pct":88.57,"status":"ผ่าน","tScore":56.06},
+      {"id":"69124301034","score":65.0,"pct":92.86,"status":"ผ่าน","tScore":61.57},
+      {"id":"69124301035","score":62.0,"pct":88.57,"status":"ผ่าน","tScore":56.06},
+      {"id":"69124301036","score":57.0,"pct":81.43,"status":"ผ่าน","tScore":46.88},
+      {"id":"69124301037","score":62.0,"pct":88.57,"status":"ผ่าน","tScore":56.06},
+      {"id":"69124301038","score":62.0,"pct":88.57,"status":"ผ่าน","tScore":56.06},
+      {"id":"69124301039","score":64.0,"pct":91.43,"status":"ผ่าน","tScore":59.73},
+      {"id":"69124301040","score":63.0,"pct":90.0,"status":"ผ่าน","tScore":57.9},
+      {"id":"69124301041","score":61.0,"pct":87.14,"status":"ผ่าน","tScore":54.23},
+      {"id":"69124301042","score":60.0,"pct":85.71,"status":"ผ่าน","tScore":52.39},
+      {"id":"69124301043","score":60.0,"pct":85.71,"status":"ผ่าน","tScore":52.39},
+      {"id":"69124301044","score":60.0,"pct":85.71,"status":"ผ่าน","tScore":52.39},
+      {"id":"69124301045","score":54.0,"pct":77.14,"status":"ผ่าน","tScore":41.38},
+      {"id":"69124301046","score":63.0,"pct":90.0,"status":"ผ่าน","tScore":57.9},
+      {"id":"69124301047","score":61.0,"pct":87.14,"status":"ผ่าน","tScore":54.23},
+      {"id":"69124301048","score":59.0,"pct":84.29,"status":"ผ่าน","tScore":50.56},
+      {"id":"69124301049","score":63.0,"pct":90.0,"status":"ผ่าน","tScore":57.9},
+      {"id":"69124301050","score":58.0,"pct":82.86,"status":"ผ่าน","tScore":48.72},
+      {"id":"69124301051","score":61.0,"pct":87.14,"status":"ผ่าน","tScore":54.23},
+      {"id":"69124301052","score":61.0,"pct":87.14,"status":"ผ่าน","tScore":54.23},
+      {"id":"69124301053","score":65.0,"pct":92.86,"status":"ผ่าน","tScore":61.57},
+      {"id":"69124301054","score":58.0,"pct":82.86,"status":"ผ่าน","tScore":48.72},
+      {"id":"69124301055","score":55.0,"pct":78.57,"status":"ผ่าน","tScore":43.21},
+      {"id":"69124301056","score":55.0,"pct":78.57,"status":"ผ่าน","tScore":43.21},
+      {"id":"69124301057","score":46.0,"pct":65.71,"status":"ผ่าน","tScore":26.69},
+      {"id":"69124301058","score":63.0,"pct":90.0,"status":"ผ่าน","tScore":57.9},
+      {"id":"69124301059","score":55.0,"pct":78.57,"status":"ผ่าน","tScore":43.21},
+      {"id":"69124301060","score":63.0,"pct":90.0,"status":"ผ่าน","tScore":57.9},
+      {"id":"69124301061","score":61.0,"pct":87.14,"status":"ผ่าน","tScore":54.23},
+      {"id":"69124301062","score":60.0,"pct":85.71,"status":"ผ่าน","tScore":52.39},
+      {"id":"69124301063","score":52.0,"pct":74.29,"status":"ผ่าน","tScore":37.71},
+      {"id":"69124301064","score":57.0,"pct":81.43,"status":"ผ่าน","tScore":46.88},
+      {"id":"69124301065","score":65.0,"pct":92.86,"status":"ผ่าน","tScore":61.57},
+      {"id":"69124301066","score":58.0,"pct":82.86,"status":"ผ่าน","tScore":48.72},
+      {"id":"69124301067","score":61.0,"pct":87.14,"status":"ผ่าน","tScore":54.23},
+      {"id":"69124301068","score":60.0,"pct":85.71,"status":"ผ่าน","tScore":52.39},
+      {"id":"69124301069","score":63.0,"pct":90.0,"status":"ผ่าน","tScore":57.9},
+      {"id":"69124301070","score":60.0,"pct":85.71,"status":"ผ่าน","tScore":52.39},
+      {"id":"69124301071","score":62.0,"pct":88.57,"status":"ผ่าน","tScore":56.06},
+      {"id":"69124301072","score":62.0,"pct":88.57,"status":"ผ่าน","tScore":56.06},
+      {"id":"69124301073","score":65.0,"pct":92.86,"status":"ผ่าน","tScore":61.57},
+      {"id":"69124301074","score":55.0,"pct":78.57,"status":"ผ่าน","tScore":43.21},
+      {"id":"69124301075","score":57.0,"pct":81.43,"status":"ผ่าน","tScore":46.88},
+      {"id":"69124301076","score":63.0,"pct":90.0,"status":"ผ่าน","tScore":57.9},
+      {"id":"69124301077","score":58.0,"pct":82.86,"status":"ผ่าน","tScore":48.72},
+      {"id":"69124301078","score":58.0,"pct":82.86,"status":"ผ่าน","tScore":48.72},
+      {"id":"69124301079","score":57.0,"pct":81.43,"status":"ผ่าน","tScore":46.88},
+      {"id":"69124301080","score":51.0,"pct":72.86,"status":"ผ่าน","tScore":35.87},
+      {"id":"69124301081","score":60.0,"pct":85.71,"status":"ผ่าน","tScore":52.39},
+      {"id":"69124301082","score":58.0,"pct":82.86,"status":"ผ่าน","tScore":48.72},
+      {"id":"69124301083","score":51.0,"pct":72.86,"status":"ผ่าน","tScore":35.87},
+      {"id":"69124301084","score":58.0,"pct":82.86,"status":"ผ่าน","tScore":48.72},
+      {"id":"69124301085","score":57.0,"pct":81.43,"status":"ผ่าน","tScore":46.88},
+      {"id":"69124301086","score":56.0,"pct":80.0,"status":"ผ่าน","tScore":45.05},
+      {"id":"69124301087","score":63.0,"pct":90.0,"status":"ผ่าน","tScore":57.9},
+      {"id":"69124301088","score":67.0,"pct":95.71,"status":"ผ่าน","tScore":65.24},
+      {"id":"69124301089","score":53.0,"pct":75.71,"status":"ผ่าน","tScore":39.54},
+      {"id":"69124301090","score":53.0,"pct":75.71,"status":"ผ่าน","tScore":39.54},
+      {"id":"69124301091","score":64.0,"pct":91.43,"status":"ผ่าน","tScore":59.73},
+      {"id":"69124301092","score":61.0,"pct":87.14,"status":"ผ่าน","tScore":54.23},
+      {"id":"69124301093","score":37.0,"pct":52.86,"status":"ผ่าน","tScore":10.19},
+      {"id":"69124301094","score":57.0,"pct":81.43,"status":"ผ่าน","tScore":46.88},
+      {"id":"69124301095","score":61.0,"pct":87.14,"status":"ผ่าน","tScore":54.23},
+      {"id":"69124301096","score":58.0,"pct":82.86,"status":"ผ่าน","tScore":48.72},
+      {"id":"69124301097","score":48.0,"pct":68.57,"status":"ผ่าน","tScore":30.36},
+      {"id":"69124301098","score":65.0,"pct":92.86,"status":"ผ่าน","tScore":61.57},
+      {"id":"69124301099","score":64.0,"pct":91.43,"status":"ผ่าน","tScore":59.73},
+      {"id":"69124301100","score":58.0,"pct":82.86,"status":"ผ่าน","tScore":48.72},
+      {"id":"69124301101","score":58.0,"pct":82.86,"status":"ผ่าน","tScore":48.72},
+      {"id":"69124301102","score":66.0,"pct":94.29,"status":"ผ่าน","tScore":63.41},
+      {"id":"69124301103","score":58.0,"pct":82.86,"status":"ผ่าน","tScore":48.72},
+      {"id":"69124301104","score":55.0,"pct":78.57,"status":"ผ่าน","tScore":43.21},
+      {"id":"69124301105","score":59.0,"pct":84.29,"status":"ผ่าน","tScore":50.56},
+      {"id":"69124301106","score":58.0,"pct":82.86,"status":"ผ่าน","tScore":48.72},
+      {"id":"69124301107","score":58.0,"pct":82.86,"status":"ผ่าน","tScore":48.72},
+      {"id":"69124301108","score":60.0,"pct":85.71,"status":"ผ่าน","tScore":52.39},
+      {"id":"69124301109","score":52.0,"pct":74.29,"status":"ผ่าน","tScore":37.71},
+      {"id":"69124301110","score":64.0,"pct":91.43,"status":"ผ่าน","tScore":59.73}
+    ];
+
+    const tableBody = document.getElementById('student-table-body');
+    const searchInput = document.getElementById('student-search');
+    const clearBtn = document.getElementById('clear-search');
+    const tableCount = document.getElementById('table-count');
+    const singleCard = document.getElementById('single-result-card');
+
+    function renderTable(data) {
+      tableCount.textContent = data.length;
+      if (data.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center py-8 text-slate-400">
+              ไม่พบข้อมูลรหัสนักศึกษาที่ค้นหา
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tableBody.innerHTML = data.map((item, index) => `
+        <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+          <td class="py-3 px-4 text-center text-xs text-slate-400">${index + 1}</td>
+          <td class="py-3 px-4 font-mono font-medium text-slate-800">${item.id}</td>
+          <td class="py-3 px-4 text-center font-bold text-indigo-700">${item.score}</td>
+          <td class="py-3 px-4 text-center text-slate-600">${item.pct}%</td>
+          <td class="py-3 px-4 text-center text-slate-600">${item.tScore}</td>
+          <td class="py-3 px-4 text-center">
+            <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+              ${item.status}
+            </span>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function updateSingleCard(student) {
+      if (!student) {
+        singleCard.classList.add('hidden');
+        return;
+      }
+      document.getElementById('res-id').textContent = student.id;
+      document.getElementById('res-score').textContent = student.score;
+      document.getElementById('res-pct').textContent = student.pct + '%';
+      document.getElementById('res-tscore').textContent = student.tScore;
+      document.getElementById('res-status').textContent = student.status;
+      
+      const pctBar = (student.score / 70) * 100;
+      document.getElementById('res-bar').style.width = pctBar + '%';
+      singleCard.classList.remove('hidden');
+    }
+
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.trim();
+      clearBtn.classList.toggle('hidden', query.length === 0);
+
+      const filtered = rawData.filter(item => item.id.includes(query));
+      renderTable(filtered);
+
+      if (filtered.length === 1 && query.length >= 3) {
+        updateSingleCard(filtered[0]);
+      } else {
+        updateSingleCard(null);
+      }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      clearBtn.classList.add('hidden');
+      renderTable(rawData);
+      updateSingleCard(null);
+      searchInput.focus();
+    });
+
+    // Render Histogram Chart
+    function initChart() {
+      const bins = {
+        '30-39': 0,
+        '40-49': 0,
+        '50-54': 0,
+        '55-59': 0,
+        '60-64': 0,
+        '65-70': 0
+      };
+
+      rawData.forEach(item => {
+        const s = item.score;
+        if (s < 40) bins['30-39']++;
+        else if (s < 50) bins['40-49']++;
+        else if (s < 55) bins['50-54']++;
+        else if (s < 60) bins['55-59']++;
+        else if (s < 65) bins['60-64']++;
+        else bins['65-70']++;
+      });
+
+      const ctx = document.getElementById('scoreChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['30 - 39 คะแนน', '40 - 49 คะแนน', '50 - 54 คะแนน', '55 - 59 คะแนน', '60 - 64 คะแนน', '65 - 70 คะแนน'],
+          datasets: [{
+            label: 'จำนวนนักศึกษา (คน)',
+            data: Object.values(bins),
+            backgroundColor: [
+              'rgba(245, 158, 11, 0.7)',
+              'rgba(234, 179, 8, 0.7)',
+              'rgba(59, 130, 246, 0.7)',
+              'rgba(99, 102, 241, 0.8)',
+              'rgba(79, 70, 229, 0.9)',
+              'rgba(16, 185, 129, 0.85)'
+            ],
+            borderColor: [
+              'rgb(245, 158, 11)',
+              'rgb(234, 179, 8)',
+              'rgb(59, 130, 246)',
+              'rgb(99, 102, 241)',
+              'rgb(79, 70, 229)',
+              'rgb(16, 185, 129)'
+            ],
+            borderWidth: 1.5,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (context) => `จำนวน: ${context.parsed.y} คน`
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 10 },
+              grid: { color: '#f1f5f9' }
+            },
+            x: {
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    // Initial render
+    renderTable(rawData);
+    initChart();
+  </script>
+</body>
+</html>
